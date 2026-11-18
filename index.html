@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de Informe de Laboratorio de Física — UNJBG</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Librería opcional para generar archivos .docx reales en el navegador -->
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js" defer></script>
+</head>
+<body>
+  <!-- Barra superior de acciones -->
+  <header class="topbar no-print">
+    <div class="topbar-brand">
+      <div class="badge-unjbg">UNJBG</div>
+      <div>
+        <h1>Generador de Informe de Laboratorio de Física</h1>
+        <span class="subtitle">Universidad Nacional Jorge Basadre Grohmann — Tacna</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="btn btn-outline" id="btnLoadDemo" title="Cargar un informe completo de ejemplo">
+        Cargar Ejemplo
+      </button>
+      <button type="button" class="btn btn-outline" id="btnExportJson" title="Guardar respaldo editable en JSON">
+        Guardar JSON
+      </button>
+      <label class="btn btn-outline file-label" title="Cargar archivo JSON guardado">
+        Cargar JSON
+        <input type="file" id="inputImportJson" accept=".json" hidden />
+      </label>
+      <button type="button" class="btn btn-secondary" id="btnExportDocx">
+        Descargar Word (.docx)
+      </button>
+      <button type="button" class="btn btn-primary" id="btnPrintPdf">
+        Imprimir / Guardar PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- Navegación móvil entre Editor y Vista Previa -->
+  <div class="mobile-tabs no-print">
+    <button type="button" class="tab-btn active" data-view="editor">1. Editor del Informe</button>
+    <button type="button" class="tab-btn" data-view="preview">2. Vista Previa A4</button>
+  </div>
+
+  <main class="workspace">
+    <!-- PANEL IZQUIERDO: FORMULARIO ESTRUCTURADO -->
+    <section class="editor-panel no-print" id="editorPanel">
+      <div class="editor-toolbar">
+        <span class="autosave-status" id="autosaveStatus">Autoguardado activo</span>
+        <button type="button" class="btn-text-danger" id="btnResetAll">Limpiar todo</button>
+      </div>
+
+      <!-- SECCIÓN 0: ENCABEZADO INSTITUCIONAL -->
+      <details class="card-section" open>
+        <summary>0. Encabezado Institucional y Datos Generales (UNJBG)</summary>
+        <div class="section-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="facultad">Facultad</label>
+              <input type="text" id="facultad" list="facultadesList" placeholder="Ej. Facultad de Ingeniería" />
+              <datalist id="facultadesList">
+                <option value="Facultad de Ingeniería (FAIN)">
+                <option value="Facultad de Ingeniería Civil, Arquitectura y Geotecnia (FIAG)">
+                <option value="Facultad de Ciencias (FACI)">
+                <option value="Facultad de Ciencias Agropecuarias (FCAG)">
+                <option value="Facultad de Ciencias de la Salud (FACS)">
+              </datalist>
+            </div>
+            <div class="form-group">
+              <label for="escuela">Escuela Profesional</label>
+              <input type="text" id="escuela" list="escuelasList" placeholder="Ej. Ingeniería Ambiental / Física" />
+              <datalist id="escuelasList">
+                <option value="Ingeniería Ambiental">
+                <option value="Física Aplicada">
+                <option value="Ingeniería Civil">
+                <option value="Ingeniería Química">
+                <option value="Ingeniería Mecánica">
+                <option value="Ingeniería de Minas">
+                <option value="Ingeniería Metalúrgica">
+                <option value="Ingeniería en Informática y Sistemas">
+              </datalist>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="laboratorio">Laboratorio de</label>
+              <input type="text" id="laboratorio" value="FÍSICA" />
+            </div>
+            <div class="form-group">
+              <label for="tituloPractica">Título de la práctica</label>
+              <input type="text" id="tituloPractica" placeholder="Ej. Determinación de la aceleración de la gravedad mediante péndulo simple" />
+            </div>
+          </div>
+
+          <!-- Autores -->
+          <div class="subsection-box">
+            <div class="subsection-header">
+              <strong>Autores (Apellidos y Nombres - Código Universitario)</strong>
+              <button type="button" class="btn btn-sm btn-outline" id="btnAddAuthor">+ Agregar Autor</button>
+            </div>
+            <div id="authorsContainer" class="dynamic-list"></div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="grupo">Grupo</label>
+              <input type="text" id="grupo" placeholder="Ej. A / Subgrupo 2" />
+            </div>
+            <div class="form-group">
+              <label for="horario">Horario</label>
+              <input type="text" id="horario" placeholder="Ej. Miércoles 10:00 - 12:00" />
+            </div>
+            <div class="form-group">
+              <label for="docente">Docente (Grado y Nombre)</label>
+              <input type="text" id="docente" placeholder="Ej. MSc. Juan Pérez Mamani" />
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="fechaEjecucion">Fecha de ejecución</label>
+              <input type="date" id="fechaEjecucion" />
+            </div>
+            <div class="form-group">
+              <label for="fechaEntregaTexto">Fecha de entrega (Tacna, ... de 2026)</label>
+              <input type="text" id="fechaEntregaTexto" placeholder="Tacna, 18 de noviembre de 2026" />
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 1: RESUMEN -->
+      <details class="card-section" open>
+        <summary>1. Resumen</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            <strong>Norma UNJBG:</strong> Redactado en <em>tercera persona, tiempo pasado, vocabulario formal</em> y con una extensión aproximada de <strong>15 líneas</strong>. Debe incluir: fundamentación teórica breve, metodología empleada, resultados más relevantes con valores numéricos y su incerteza, y conclusiones principales. <em>Se elabora al final del informe.</em>
+          </div>
+          <div class="toolbar-inline">
+            <span id="resumenCounter" class="counter-badge">0 líneas estimadas (0 palabras)</span>
+            <button type="button" class="btn btn-sm btn-outline" id="btnGenerateResumenDraft">
+              Generar borrador base desde datos
+            </button>
+          </div>
+          <textarea id="resumen" rows="7" placeholder="En la presente práctica de laboratorio se determinó experimentalmente..."></textarea>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 2: INTRODUCCIÓN Y OBJETIVOS -->
+      <details class="card-section">
+        <summary>2. Introducción y Objetivos</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            <strong>Norma UNJBG:</strong> Exposición de motivaciones, mínima base teórica, ecuaciones numeradas correlativamente <code>(1)</code>, <code>(2)</code>... y citas bibliográficas <code>[1]</code>. Al final se indican claramente los objetivos. <strong>No debe incluir resultados ni conclusiones.</strong>
+          </div>
+          <div class="form-group">
+            <label for="introduccion">Fundamento Teórico y Motivación</label>
+            <textarea id="introduccion" rows="7" placeholder="Redacte la motivación del experimento, el marco teórico y las ecuaciones numeradas, por ejemplo: T = 2π √(L/g)   (1) ... [1]."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="objetivoGeneral">Objetivo General</label>
+            <textarea id="objetivoGeneral" rows="2" placeholder="Determinar experimentalmente..."></textarea>
+          </div>
+          <div class="subsection-box">
+            <div class="subsection-header">
+              <strong>Objetivos Específicos</strong>
+              <button type="button" class="btn btn-sm btn-outline" id="btnAddObjEsp">+ Agregar Objetivo</button>
+            </div>
+            <div id="objetivosEspContainer" class="dynamic-list"></div>
+          </div>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 3: MATERIALES Y DESARROLLO EXPERIMENTAL -->
+      <details class="card-section">
+        <summary>3. Materiales y Desarrollo Experimental</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            <strong>3.1 Materiales:</strong> Especifique apreciación, rango de medición y marca.<br />
+            <strong>3.2 Procedimiento:</strong> Redactado en <em>tiempo pasado</em>. Incluya el esquema del dispositivo (<strong>Figura 1</strong>) y tablas con datos directos (sin resultados procesados).
+          </div>
+
+          <div class="subsection-box">
+            <div class="subsection-header">
+              <strong>3.1 Materiales, Equipos y Reactivos</strong>
+              <div>
+                <button type="button" class="btn btn-sm btn-outline" id="btnPresetMaterials">Precargar básicos</button>
+                <button type="button" class="btn btn-sm btn-outline" id="btnAddMaterial">+ Agregar Ítem</button>
+              </div>
+            </div>
+            <div id="materialsContainer" class="dynamic-list"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="procedimiento">3.2 Procedimiento Experimental (en tiempo pasado)</label>
+            <textarea id="procedimiento" rows="5" placeholder="Se instaló el soporte universal sobre la mesa de trabajo. Posteriormente se midió la longitud..."></textarea>
+          </div>
+
+          <!-- Figura 1: Esquema Experimental -->
+          <div class="subsection-box">
+            <div class="subsection-header">
+              <strong>Figura 1: Esquema del Dispositivo Experimental</strong>
+              <label class="btn btn-sm btn-outline file-label">
+                Subir Imagen
+                <input type="file" id="inputFigura1" accept="image/*" hidden />
+              </label>
+            </div>
+            <div class="form-group">
+              <input type="text" id="figura1Leyenda" placeholder="Leyenda: Esquema del montaje experimental utilizado para..." />
+            </div>
+            <div id="figura1PreviewBox" class="img-thumb-box hidden">
+              <img id="figura1Thumb" alt="Vista previa Figura 1" />
+              <button type="button" class="btn-text-danger" id="btnRemoveFigura1">Quitar imagen</button>
+            </div>
+          </div>
+
+          <!-- Tablas de Datos Directos -->
+          <div class="subsection-box">
+            <div class="subsection-header">
+              <strong>Tablas de Datos Experimentales Directos (Crudos)</strong>
+              <button type="button" class="btn btn-sm btn-outline" id="btnAddRawTable">+ Nueva Tabla de Datos</button>
+            </div>
+            <div id="rawTablesContainer" class="dynamic-list"></div>
+          </div>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 4: RESULTADOS Y DISCUSIÓN -->
+      <details class="card-section">
+        <summary>4. Resultados y Discusión (Cálculos, Incertezas y Gráficas)</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            <strong>Norma UNJBG:</strong> Tablas y figuras numeradas correlativamente con leyenda. Toda gráfica debe incluir: <strong>título, nombre de cada eje con unidades, escalas y nota al pie</strong>. Incluir evaluación de incertezas, ajuste de curvas/pendientes y comparación con el modelo teórico.
+          </div>
+
+          <!-- Asistente de Regresión Lineal y Gráfica Científica -->
+          <div class="calc-card">
+            <div class="subsection-header">
+              <strong>Calculadora de Ajuste Lineal (Mínimos Cuadrados) y Gráfica Científica</strong>
+              <label class="checkbox-inline">
+                <input type="checkbox" id="includeAutoChart" checked />
+                Incluir gráfica en el informe
+              </label>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="chartTitle">Título de la Gráfica</label>
+                <input type="text" id="chartTitle" placeholder="Ej. Periodo al cuadrado en función de la longitud" />
+              </div>
+              <div class="form-group">
+                <label for="chartFootnote">Nota al pie de la gráfica</label>
+                <input type="text" id="chartFootnote" placeholder="Fuente: Elaboración propia a partir de mediciones en laboratorio." />
+              </div>
+            </div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="axisXLabel">Eje X (Magnitud y Unidad)</label>
+                <input type="text" id="axisXLabel" placeholder="Ej. Longitud L (m)" />
+              </div>
+              <div class="form-group">
+                <label for="axisYLabel">Eje Y (Magnitud y Unidad)</label>
+                <input type="text" id="axisYLabel" placeholder="Ej. Periodo cuadrado T² (s²)" />
+              </div>
+              <div class="form-group">
+                <label for="theoreticalSlope">Pendiente Teórica (opcional)</label>
+                <input type="number" step="any" id="theoreticalSlope" placeholder="Ej. 4.02" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="xyPairsInput">Pares de datos procesados (X, Y) — un par por línea separados por coma o espacio</label>
+              <textarea id="xyPairsInput" rows="4" placeholder="0.20, 0.81&#10;0.40, 1.62&#10;0.60, 2.41&#10;0.80, 3.23&#10;1.00, 4.04"></textarea>
+            </div>
+
+            <div class="calc-results-box" id="regressionSummaryBox">
+              Ingrese al menos 2 pares de datos (X, Y) para calcular pendiente, incerteza y R².
+            </div>
+            <canvas id="scientificChartCanvas" width="680" height="380" class="chart-canvas"></canvas>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="resultadosTexto">Presentación de Resultados Procesados e Incertezas</label>
+            <textarea id="resultadosTexto" rows="5" placeholder="A partir de los datos experimentales y el ajuste por mínimos cuadrados se obtuvo una pendiente m = (4.03 ± 0.02) s²/m..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="discusion">Discusión de Resultados (Validez, Precisión y Comparación Teórica)</label>
+            <textarea id="discusion" rows="5" placeholder="Al comparar el valor experimental obtenido con el modelo teórico, se observa un error porcentual de..."></textarea>
+          </div>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 5: CONCLUSIONES -->
+      <details class="card-section">
+        <summary>5. Conclusiones</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            <strong>Norma UNJBG:</strong> Argumentación sustentada <em>exclusivamente en los datos experimentales</em> demostrando los objetivos planteados. Incluir análisis de posibles fuentes de error y aproximaciones respecto al caso ideal.
+          </div>
+          <div class="subsection-box">
+            <div class="subsection-header">
+              <strong>Conclusiones Experimentales</strong>
+              <button type="button" class="btn btn-sm btn-outline" id="btnAddConclusion">+ Agregar Conclusión</button>
+            </div>
+            <div id="conclusionsContainer" class="dynamic-list"></div>
+          </div>
+          <div class="form-group">
+            <label for="fuentesError">Análisis de Fuentes de Error y Aproximaciones al Caso Ideal</label>
+            <textarea id="fuentesError" rows="4" placeholder="Las principales fuentes de error sistemático y aleatorio fueron la resistencia del aire, la fricción en el pivote y el tiempo de reacción humano..."></textarea>
+          </div>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 6: REFLEXIÓN ARGUMENTADA -->
+      <details class="card-section">
+        <summary>6. Reflexión Argumentada</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            <strong>Norma UNJBG:</strong> Comentario fundamentado que permite relacionar la teoría evaluada experimentalmente con el campo de acción profesional de su Escuela Profesional.
+          </div>
+          <textarea id="reflexion" rows="5" placeholder="Los principios físicos verificados en esta práctica resultan fundamentales en el ejercicio de la ingeniería/ciencia porque permiten..."></textarea>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 7: REFERENCIAS -->
+      <details class="card-section">
+        <summary>7. Referencias Bibliográficas</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            <strong>Formato normado:</strong> <code>[1] M. Alonso, E. J. Finn, Física Vol. I: Mecánica, Fondo Educativo Interamericano, México, 1986.</code>
+          </div>
+          <div class="subsection-box">
+            <div class="subsection-header">
+              <strong>Referencias Citadas</strong>
+              <button type="button" class="btn btn-sm btn-outline" id="btnAddReference">+ Agregar Referencia</button>
+            </div>
+            <div id="referencesContainer" class="dynamic-list"></div>
+          </div>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 8: CUESTIONARIO -->
+      <details class="card-section">
+        <summary>8. Cuestionario</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            Preguntas propuestas por el docente en la guía de práctica de laboratorio de física y su resolución fundamentada.
+          </div>
+          <div class="subsection-box">
+            <div class="subsection-header">
+              <strong>Preguntas y Respuestas</strong>
+              <button type="button" class="btn btn-sm btn-outline" id="btnAddQuestion">+ Agregar Pregunta</button>
+            </div>
+            <div id="questionsContainer" class="dynamic-list"></div>
+          </div>
+        </div>
+      </details>
+
+      <!-- SECCIÓN 9: APÉNDICES -->
+      <details class="card-section">
+        <summary>9. Apéndices</summary>
+        <div class="section-body">
+          <div class="guideline-box">
+            Información complementaria: desarrollo paso a paso de fórmulas, propagación de incertezas y cálculos auxiliares que en el cuerpo principal distraerían al lector.
+          </div>
+          <textarea id="apendices" rows="6" placeholder="Apéndice A: Propagación de incertidumbres&#10;Δg = g * √((ΔL/L)² + (2ΔT/T)²) = ..."></textarea>
+        </div>
+      </details>
+    </section>
+
+    <!-- PANEL DERECHO: VISTA PREVIA EN HOJA A4 -->
+    <section class="preview-panel" id="previewPanel">
+      <div class="preview-header-bar no-print">
+        <span>Vista previa del documento (Formato Formal A4 — UNJBG)</span>
+        <span class="preview-tip">Listo para imprimir o exportar a Word</span>
+      </div>
+      <div class="a4-sheet" id="a4PreviewContent">
+        <!-- Renderizado dinámicamente por app.js -->
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
